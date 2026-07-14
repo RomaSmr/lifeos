@@ -7,6 +7,7 @@ import { Check, Calendar, Trash2, Plus } from 'lucide-react';
 import { Task } from '@/types';
 import { EmptyState } from '@/app/components/EmptyState';
 import { TaskModal } from '@/app/components/Modals/TaskModal';
+import { Tooltip } from '@/app/components/Tooltip';
 
 interface TaskListProps {
   tasks: Task[];
@@ -60,32 +61,34 @@ export function TaskList({ tasks, onToggle, onDelete, onCreate, isDarkMode }: Ta
             ({completedCount}/{tasks.length})
           </span>
         </h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          style={{
-            padding: '4px 10px',
-            background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
-            border: 'none',
-            borderRadius: '6px',
-            color: 'white',
-            fontSize: '11px',
-            fontWeight: '500',
-            cursor: 'pointer',
-            transition: 'all 0.2s',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.02)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-          }}
-        >
-          <Plus size={12} />
-          Добавить
-        </button>
+        <Tooltip text="Создать новую задачу" position="top">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            style={{
+              padding: '4px 10px',
+              background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+              border: 'none',
+              borderRadius: '6px',
+              color: 'white',
+              fontSize: '11px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'scale(1.02)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            <Plus size={12} />
+            Добавить
+          </button>
+        </Tooltip>
       </div>
 
       {tasks.length === 0 ? (
@@ -116,25 +119,25 @@ export function TaskList({ tasks, onToggle, onDelete, onCreate, isDarkMode }: Ta
                 opacity: task.status === 'completed' ? 0.5 : 1,
               }}
             >
-              <button
-                onClick={() => onToggle(task.id)}
-                style={{
-                  width: '18px',
-                  height: '18px',
-                  borderRadius: '4px',
-                  border: `2px solid ${task.status === 'completed' ? '#22c55e' : '#374151'}`,
-                  background: task.status === 'completed' ? '#22c55e' : 'transparent',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                {task.status === 'completed' && (
-                  <Check size={10} style={{ color: 'white' }} />
-                )}
-              </button>
+              <Tooltip text={task.status === 'completed' ? 'Отметить как невыполненную' : 'Отметить как выполненную'} position="top">
+                <button
+                  onClick={() => onToggle(task.id)}
+                  style={{
+                    width: '18px',
+                    height: '18px',
+                    borderRadius: '4px',
+                    border: `2px solid ${task.status === 'completed' ? '#22c55e' : '#374151'}`,
+                    background: task.status === 'completed' ? '#22c55e' : 'transparent',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  {task.status === 'completed' && <Check size={10} style={{ color: 'white' }} />}
+                </button>
+              </Tooltip>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
                   color: task.status === 'completed' ? '#6b7280' : (isDarkMode ? '#d1d5db' : '#4b5563'),
@@ -181,28 +184,30 @@ export function TaskList({ tasks, onToggle, onDelete, onCreate, isDarkMode }: Ta
                      '▫️'}
                   </span>
                 )}
-                <button
-                  onClick={() => onDelete(task.id)}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '2px',
-                    color: '#6b7280',
-                    transition: 'all 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = '#ef4444';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = '#6b7280';
-                  }}
-                >
-                  <Trash2 size={12} />
-                </button>
+                <Tooltip text="Удалить задачу" position="top">
+                  <button
+                    onClick={() => onDelete(task.id)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '2px',
+                      color: '#6b7280',
+                      transition: 'all 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = '#ef4444';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = '#6b7280';
+                    }}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </Tooltip>
               </div>
             </div>
           ))}

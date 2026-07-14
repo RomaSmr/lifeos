@@ -1,4 +1,4 @@
-// apps/web/app/api/habits/route.ts
+// apps/web/app/api/regular-notes/route.ts
 
 import { query } from '@/lib/db/client';
 import { NextRequest, NextResponse } from 'next/server';
@@ -17,18 +17,28 @@ async function getUserId() {
   }
 }
 
-// GET — получить все привычки
-export async function GET() {
+export async function GET(request: NextRequest) {
   const userId = await getUserId();
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const url = new URL(request.url);
+  const folderId = url.searchParams.get('folderId');
+
   try {
-    const result = await query(
-      `SELECT * FROM habits WHERE user_id = $1 ORDER BY created_at ASC`,
-      [userId]
-    );
+    let result;
+    if (folderId) {
+      result = await query(
+        'SELECT * FROM regular_notes WHERE user_id = $1 AND folder_id = $2 ORDER BY created_at DESC',
+        [userId, folderId]
+      );
+    } else {
+      result = await query(
+        'SELECT * FROM regular_notes WHERE user_id = $1 ORDER BY created_at DESC',
+        [userId]
+      );
+    }
     return NextResponse.json(result.rows);
   } catch (error) {
     console.error('DB Error:', error);
@@ -36,20 +46,18 @@ export async function GET() {
   }
 }
 
-// POST — создать привычку
 export async function POST(request: NextRequest) {
   const userId = await getUserId();
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { title, description, emoji, goal, target_date, frequency } = await request.json();
+  const { folder_id, title, content } = await request.json();
 
   try {
     const result = await query(
-      `INSERT INTO habits (user_id, title, description, emoji, goal, target_date, frequency)
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [userId, title, description, emoji, goal, target_date, frequency]
+      'INSERT INTO regular_notes (user_id, folder_id, title, content) VALUES ($1, $2, $3, $4) RETURNING *',
+      [userId, folder_id, title, content]
     );
     return NextResponse.json(result.rows[0]);
   } catch (error) {
@@ -58,50 +66,19 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH — обновить привычку (включая уведомления)
 export async function PATCH(request: NextRequest) {
   const userId = await getUserId();
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { id, streak, longest_streak, reminder_enabled, reminder_time } = await request.json();
+  const { id, folder_id, title, content } = await request.json();
 
   try {
-    let queryText = 'UPDATE habits SET ';
-    const params: any[] = [];
-    let paramIndex = 1;
-
-    if (streak !== undefined) {
-      queryText += `streak = $${paramIndex}, `;
-      params.push(streak);
-      paramIndex++;
-    }
-
-    if (longest_streak !== undefined) {
-      queryText += `longest_streak = $${paramIndex}, `;
-      params.push(longest_streak);
-      paramIndex++;
-    }
-
-    if (reminder_enabled !== undefined) {
-      queryText += `reminder_enabled = $${paramIndex}, `;
-      params.push(reminder_enabled);
-      paramIndex++;
-    }
-
-    if (reminder_time !== undefined) {
-      queryText += `reminder_time = $${paramIndex}, `;
-      params.push(reminder_time);
-      paramIndex++;
-    }
-
-    // Убираем последнюю запятую и пробел
-    queryText = queryText.slice(0, -2);
-    queryText += ` WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1} RETURNING *`;
-    params.push(id, userId);
-
-    const result = await query(queryText, params);
+    const result = await query(
+      'UPDATE regular_notes SET title = $1, content = $2, updated_at = NOW() WHERE id = $3 AND user_id = $4 RETURNING *',
+      [title, content, id, userId]
+    );
     return NextResponse.json(result.rows[0]);
   } catch (error) {
     console.error('DB Error:', error);
@@ -109,7 +86,6 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// DELETE — удалить привычку
 export async function DELETE(request: NextRequest) {
   const userId = await getUserId();
   if (!userId) {
@@ -120,7 +96,7 @@ export async function DELETE(request: NextRequest) {
   const id = url.searchParams.get('id');
 
   try {
-    await query('DELETE FROM habits WHERE id = $1 AND user_id = $2', [id, userId]);
+    await query('DELETE FROM regular_notes WHERE id = $1 AND user_id = $2', [id, userId]);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('DB Error:', error);

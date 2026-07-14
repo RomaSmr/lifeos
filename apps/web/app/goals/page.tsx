@@ -1357,6 +1357,17 @@ export default function GoalsPage() {
         </div>
       )}
 
+      <div style={{
+        marginTop: '40px',
+        textAlign: 'center',
+        fontSize: '10px',
+        color: isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)',
+        fontFamily: 'monospace',
+        letterSpacing: '2px',
+      }}>
+        v1.0
+      </div>
+
       {/* ===== МОДАЛКА СВЯЗЫВАНИЯ ===== */}
       {showLinkModal && selectedGoal && (
         <div

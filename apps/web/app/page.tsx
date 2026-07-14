@@ -251,7 +251,7 @@ export default function Home() {
           letterSpacing: '2px',
           opacity: 0.3,
         }}>
-          v0.5 · ALPHA
+          v1.0 · ALPHA
         </p>
       </div>
 

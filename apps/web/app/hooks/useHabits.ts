@@ -1,4 +1,4 @@
-// apps/web/app/dashboard/hooks/useHabits.ts
+// apps/web/app/hooks/useHabits.ts
 
 'use client';
 
@@ -146,31 +146,53 @@ export function useHabits(userId: string | null) {
     await fetch(`/api/habits?id=${habitId}`, { method: 'DELETE' });
   };
 
+  // 🔥 ИСПРАВЛЕННАЯ ФУНКЦИЯ СТАТИСТИКИ
   const getHabitStats = (habitId: string) => {
     const habit = habits.find(h => h.id === habitId);
     if (!habit) return { totalDays: 0, completedDays: 0, skippedDays: 0, percent: 0 };
 
     const today = new Date();
-    today.setHours(23, 59, 59, 999);
+    today.setHours(0, 0, 0, 0); // Сегодня в 00:00
+    
     const startDate = new Date(habit.created_at);
     startDate.setHours(0, 0, 0, 0);
 
-    let totalDaysAll = 0;
+    let endDate: Date;
     if (habit.target_date) {
-      const endDate = new Date(habit.target_date);
+      endDate = new Date(habit.target_date);
       endDate.setHours(23, 59, 59, 999);
-      totalDaysAll = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
     } else {
-      totalDaysAll = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+      endDate = new Date(today);
+      endDate.setHours(23, 59, 59, 999);
     }
 
-    const displayDays = Math.min(totalDaysAll, 30);
-    const logs = habitLogs.filter(log => log.habit_id === habitId);
-    const completedDays = logs.length;
-    const skippedDays = Math.max(0, displayDays - completedDays);
-    const percent = totalDaysAll > 0 ? Math.round((completedDays / totalDaysAll) * 100) : 0;
+    // Общее количество дней в периоде (от старта до цели)
+    const totalDays = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+    
+    // 🔥 Считаем дни, которые УЖЕ ПРОШЛИ (вчера и раньше)
+    // Сегодня не считается пропущенным, потому что день ещё не закончился
+    const daysPassed = Math.max(0, Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)));
 
-    return { totalDays: displayDays, completedDays, skippedDays, percent };
+    const logs = habitLogs.filter(log => log.habit_id === habitId);
+    
+    const completedDays = logs.filter(log => {
+      const logDate = new Date(log.completed_at);
+      logDate.setHours(0, 0, 0, 0);
+      return logDate >= startDate && logDate <= endDate;
+    }).length;
+
+    // 🔥 Пропущенные = только те дни, которые уже прошли (вчера и раньше), но не отмечены
+    // И не больше, чем дней прошло
+    const skippedDays = Math.max(0, Math.min(daysPassed, totalDays) - completedDays);
+
+    const percent = totalDays > 0 ? Math.round((completedDays / totalDays) * 100) : 0;
+
+    return { 
+      totalDays, 
+      completedDays, 
+      skippedDays, 
+      percent 
+    };
   };
 
   useEffect(() => {

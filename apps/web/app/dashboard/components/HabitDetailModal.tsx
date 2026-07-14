@@ -2,8 +2,9 @@
 
 'use client';
 
-import { X, Target, Clock } from 'lucide-react';
+import { X, Target, Clock, Calendar, Flame, CheckCircle, XCircle, Bell } from 'lucide-react';
 import { Habit } from '@/types';
+import { useState, useEffect } from 'react';
 
 interface HabitDetailModalProps {
   habit: Habit | null;
@@ -16,6 +17,7 @@ interface HabitDetailModalProps {
   onClose: () => void;
   onToggle: () => void;
   isDarkMode: boolean;
+  onUpdate: (habit: Habit) => void;
 }
 
 export function HabitDetailModal({
@@ -24,12 +26,67 @@ export function HabitDetailModal({
   onClose,
   onToggle,
   isDarkMode,
+  onUpdate,
 }: HabitDetailModalProps) {
+  const [showReminder, setShowReminder] = useState(false);
+  const [reminderTime, setReminderTime] = useState('09:00');
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (habit) {
+      setShowReminder(habit.reminder_enabled || false);
+      setReminderTime(habit.reminder_time || '09:00');
+    }
+  }, [habit]);
+
+  const saveReminderSettings = async () => {
+    if (!habit) return;
+    
+    setIsSaving(true);
+    try {
+      const res = await fetch('/api/habits', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: habit.id,
+          reminder_enabled: showReminder,
+          reminder_time: showReminder ? reminderTime : null,
+        }),
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        onUpdate(updated);
+      }
+    } catch (error) {
+      console.error('Error saving reminder:', error);
+    }
+    setIsSaving(false);
+  };
+
   if (!habit) return null;
 
   const radius = 80;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (stats.percent / 100) * circumference;
+
+  // 🔥 ПРАВИЛЬНЫЙ РАСЧЁТ ОСТАВШИХСЯ ДНЕЙ
+  const getRemainingDays = () => {
+    if (!habit.target_date) return 0;
+    
+    const targetDate = new Date(habit.target_date);
+    targetDate.setHours(23, 59, 59, 999);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const diffTime = targetDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return Math.max(0, diffDays);
+  };
+
+  const remainingDays = getRemainingDays();
 
   return (
     <div
@@ -41,7 +98,7 @@ export function HabitDetailModal({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        zIndex: 2000,
+        zIndex: 9999,
         padding: '20px',
       }}
       onClick={onClose}
@@ -60,6 +117,7 @@ export function HabitDetailModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Header */}
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -109,15 +167,16 @@ export function HabitDetailModal({
           </button>
         </div>
 
+        {/* Тэги */}
         <div style={{
           display: 'flex',
-          gap: '12px',
+          gap: '8px',
           marginBottom: '16px',
           flexWrap: 'wrap',
         }}>
           {habit.goal && (
             <span style={{
-              fontSize: '12px',
+              fontSize: '11px',
               color: '#9ca3af',
               background: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
               padding: '4px 12px',
@@ -132,7 +191,7 @@ export function HabitDetailModal({
           )}
           {habit.target_date && (
             <span style={{
-              fontSize: '12px',
+              fontSize: '11px',
               color: '#9ca3af',
               background: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
               padding: '4px 12px',
@@ -146,7 +205,7 @@ export function HabitDetailModal({
             </span>
           )}
           <span style={{
-            fontSize: '12px',
+            fontSize: '11px',
             color: '#9ca3af',
             background: isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)',
             padding: '4px 12px',
@@ -158,20 +217,7 @@ export function HabitDetailModal({
           </span>
         </div>
 
-        {habit.description && (
-          <div style={{
-            background: isDarkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
-            borderRadius: '8px',
-            padding: '12px 16px',
-            marginBottom: '16px',
-            fontSize: '13px',
-            color: isDarkMode ? '#9ca3af' : '#6b7280',
-            lineHeight: '1.5',
-          }}>
-            {habit.description}
-          </div>
-        )}
-
+        {/* Круговая диаграмма */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
@@ -180,30 +226,30 @@ export function HabitDetailModal({
         }}>
           <div style={{
             position: 'relative',
-            width: '200px',
-            height: '200px',
+            width: '180px',
+            height: '180px',
           }}>
             <svg
-              width="200"
-              height="200"
-              viewBox="0 0 200 200"
+              width="180"
+              height="180"
+              viewBox="0 0 180 180"
               style={{ transform: 'rotate(-90deg)' }}
             >
               <circle
-                cx="100"
-                cy="100"
+                cx="90"
+                cy="90"
                 r={radius}
                 fill="none"
                 stroke={isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}
-                strokeWidth="14"
+                strokeWidth="12"
               />
               <circle
-                cx="100"
-                cy="100"
+                cx="90"
+                cy="90"
                 r={radius}
                 fill="none"
                 stroke="url(#habitDetailGradient)"
-                strokeWidth="14"
+                strokeWidth="12"
                 strokeDasharray={circumference}
                 strokeDashoffset={offset}
                 strokeLinecap="round"
@@ -226,7 +272,7 @@ export function HabitDetailModal({
               textAlign: 'center',
             }}>
               <div style={{
-                fontSize: '32px',
+                fontSize: '28px',
                 fontWeight: '700',
                 color: isDarkMode ? 'white' : '#1a1a1a',
               }}>
@@ -241,33 +287,136 @@ export function HabitDetailModal({
             </div>
           </div>
 
+          {/* Статистика */}
           <div style={{
-            display: 'flex',
-            gap: '20px',
-            marginTop: '12px',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '12px',
+            width: '100%',
+            marginTop: '16px',
           }}>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '18px', fontWeight: '600', color: '#22c55e' }}>
+            <div style={{
+              textAlign: 'center',
+              padding: '12px',
+              background: isDarkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+              borderRadius: '10px',
+              border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}`,
+            }}>
+              <CheckCircle size={20} style={{ color: '#22c55e', margin: '0 auto 4px' }} />
+              <div style={{ fontSize: '20px', fontWeight: '700', color: '#22c55e' }}>
                 {stats.completedDays}
               </div>
-              <div style={{ fontSize: '10px', color: '#6b7280' }}>✅ Выполнено</div>
+              <div style={{ fontSize: '10px', color: '#6b7280' }}>Выполнено</div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '18px', fontWeight: '600', color: '#ef4444' }}>
+            <div style={{
+              textAlign: 'center',
+              padding: '12px',
+              background: isDarkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+              borderRadius: '10px',
+              border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}`,
+            }}>
+              <XCircle size={20} style={{ color: '#ef4444', margin: '0 auto 4px' }} />
+              <div style={{ fontSize: '20px', fontWeight: '700', color: '#ef4444' }}>
                 {stats.skippedDays}
               </div>
-              <div style={{ fontSize: '10px', color: '#6b7280' }}>❌ Пропущено</div>
+              <div style={{ fontSize: '10px', color: '#6b7280' }}>Пропущено</div>
             </div>
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '18px', fontWeight: '600', color: '#f97316' }}>
-                {habit.streak || 0}
+            <div style={{
+              textAlign: 'center',
+              padding: '12px',
+              background: isDarkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+              borderRadius: '10px',
+              border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}`,
+            }}>
+              <Calendar size={20} style={{ color: '#3b82f6', margin: '0 auto 4px' }} />
+              <div style={{ fontSize: '20px', fontWeight: '700', color: '#3b82f6' }}>
+                {remainingDays}
               </div>
-              <div style={{ fontSize: '10px', color: '#6b7280' }}>🔥 Серия</div>
+              <div style={{ fontSize: '10px', color: '#6b7280' }}>Осталось</div>
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        {/* Настройка уведомлений */}
+        <div style={{
+          marginTop: '8px',
+          padding: '12px 16px',
+          background: isDarkMode ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+          borderRadius: '10px',
+          border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}`,
+        }}>
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Bell size={16} style={{ color: '#6b7280' }} />
+              <span style={{
+                fontSize: '13px',
+                color: isDarkMode ? '#d1d5db' : '#4b5563',
+              }}>
+                Напоминание
+              </span>
+            </div>
+            <button
+              onClick={() => setShowReminder(!showReminder)}
+              style={{
+                padding: '4px 12px',
+                borderRadius: '6px',
+                border: `1px solid ${showReminder ? '#3b82f6' : isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+                background: showReminder ? 'rgba(59,130,246,0.15)' : 'transparent',
+                color: showReminder ? '#3b82f6' : '#6b7280',
+                fontSize: '11px',
+                cursor: 'pointer',
+              }}
+            >
+              {showReminder ? 'Выключить' : 'Включить'}
+            </button>
+          </div>
+          {showReminder && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              marginTop: '8px',
+            }}>
+              <input
+                type="time"
+                value={reminderTime}
+                onChange={(e) => setReminderTime(e.target.value)}
+                style={{
+                  padding: '6px 12px',
+                  background: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                  border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                  borderRadius: '8px',
+                  color: isDarkMode ? 'white' : '#1a1a1a',
+                  fontSize: '13px',
+                  outline: 'none',
+                }}
+              />
+              <button
+                onClick={saveReminderSettings}
+                disabled={isSaving}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: '6px',
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+                  color: 'white',
+                  fontSize: '12px',
+                  cursor: isSaving ? 'not-allowed' : 'pointer',
+                  opacity: isSaving ? 0.5 : 1,
+                }}
+              >
+                {isSaving ? 'Сохранение...' : 'Сохранить'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Кнопки */}
+        <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
           <button
             onClick={onToggle}
             style={{

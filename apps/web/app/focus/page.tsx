@@ -1035,6 +1035,24 @@ export default function FocusPage() {
             ) : null}
           </div>
 
+          {/* Версия */}
+          <div style={{
+            marginTop: 'auto',
+            paddingTop: '16px',
+            borderTop: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}`,
+            textAlign: 'center',
+          }}>
+            <p style={{
+              fontSize: '10px',
+              color: isDarkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)',
+              fontFamily: 'monospace',
+              letterSpacing: '2px',
+              margin: 0,
+            }}>
+              v1.0
+            </p>
+          </div>
+
           {/* История */}
           {sessions.length > 0 && (
             <div style={{

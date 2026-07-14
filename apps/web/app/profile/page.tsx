@@ -20,6 +20,8 @@ import { useTheme } from '@/app/hooks/useTheme';
 import { useTasks } from '@/app/hooks/useTasks';
 import { useHabits } from '@/app/hooks/useHabits';
 import { User as UserType } from '@/types';
+import { MessageSquare } from 'lucide-react';
+import { FeedbackForm } from '@/app/components/FeedbackForm';
 
 // ========== МОДАЛЬНОЕ ОКНО ==========
 function Modal({ isOpen, onClose, title, children }: any) {
@@ -124,6 +126,9 @@ export default function ProfilePage() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   
+  // Обратная связь
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const sidebarRef = useRef<HTMLDivElement>(null);
@@ -409,7 +414,7 @@ export default function ProfilePage() {
             color: isDarkMode ? '#6b7280' : '#6b7280',
             fontFamily: 'monospace',
           }}>
-            v0.6 · ALPHA
+            v1.0 · ALPHA
           </span>
         </div>
 
@@ -932,6 +937,67 @@ export default function ProfilePage() {
               <ChevronRight size={16} style={{ color: '#6b7280' }} />
             </div>
 
+            {/* 🔥 НОВАЯ КНОПКА "СООБЩИТЬ О ПРОБЛЕМЕ" */}
+            <div style={{
+              padding: '12px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              borderBottom: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}`,
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
+            onClick={() => setIsFeedbackModalOpen(true)}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+              }}>
+                <MessageSquare size={18} style={{ color: '#6b7280' }} />
+                <span style={{ color: isDarkMode ? '#d1d5db' : '#4b5563', fontSize: '14px' }}>Сообщить о проблеме</span>
+              </div>
+              <ChevronRight size={16} style={{ color: '#6b7280' }} />
+            </div>
+
+            {/* 🔥 КНОПКА АДМИН-ПАНЕЛИ (только для админов) */}
+            {user?.email === 'romagronki@gmail.com' && (
+              <div
+                style={{
+                  padding: '12px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderBottom: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}`,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(139,92,246,0.08)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+                onClick={() => router.push('/admin')}
+              >
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                }}>
+                  <Shield size={18} style={{ color: '#8b5cf6' }} />
+                  <span style={{ color: '#8b5cf6', fontSize: '14px', fontWeight: '500' }}>Админ-панель</span>
+                </div>
+                <ChevronRight size={16} style={{ color: '#8b5cf6' }} />
+              </div>
+            )}
+
             {/* Выйти */}
             <div
               style={{
@@ -972,7 +1038,7 @@ export default function ProfilePage() {
             fontFamily: 'monospace',
             letterSpacing: '2px',
           }}>
-            v0.6 · ALPHA
+            v1.0 · ALPHA
           </div>
         </div>
       </div>
@@ -1448,6 +1514,76 @@ export default function ProfilePage() {
           </div>
         </div>
       </Modal>
+
+      {/* ========== МОДАЛКА ОБРАТНОЙ СВЯЗИ ========== */}
+      {isFeedbackModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.7)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000,
+            padding: '20px',
+          }}
+          onClick={() => setIsFeedbackModalOpen(false)}
+        >
+          <div
+            style={{
+              maxWidth: '480px',
+              width: '100%',
+              background: isDarkMode ? '#141414' : '#ffffff',
+              borderRadius: '24px',
+              padding: '32px',
+              border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '20px',
+            }}>
+              <h2 style={{
+                fontSize: '20px',
+                fontWeight: '600',
+                color: isDarkMode ? 'white' : '#1a1a1a',
+                margin: 0,
+              }}>
+                Сообщить о проблеме
+              </h2>
+              <button
+                onClick={() => setIsFeedbackModalOpen(false)}
+                style={{
+                  background: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <FeedbackForm
+              onClose={() => setIsFeedbackModalOpen(false)}
+              isDarkMode={isDarkMode}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

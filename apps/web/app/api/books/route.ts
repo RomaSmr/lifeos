@@ -1,4 +1,4 @@
-// apps/web/app/api/habits/route.ts
+// apps/web/app/api/books/route.ts
 
 import { query } from '@/lib/db/client';
 import { NextRequest, NextResponse } from 'next/server';
@@ -17,7 +17,6 @@ async function getUserId() {
   }
 }
 
-// GET — получить все привычки
 export async function GET() {
   const userId = await getUserId();
   if (!userId) {
@@ -26,7 +25,7 @@ export async function GET() {
 
   try {
     const result = await query(
-      `SELECT * FROM habits WHERE user_id = $1 ORDER BY created_at ASC`,
+      'SELECT * FROM books WHERE user_id = $1 ORDER BY created_at DESC',
       [userId]
     );
     return NextResponse.json(result.rows);
@@ -36,20 +35,19 @@ export async function GET() {
   }
 }
 
-// POST — создать привычку
 export async function POST(request: NextRequest) {
   const userId = await getUserId();
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { title, description, emoji, goal, target_date, frequency } = await request.json();
+  const { title, author, link, page_number, comment, status } = await request.json();
 
   try {
     const result = await query(
-      `INSERT INTO habits (user_id, title, description, emoji, goal, target_date, frequency)
+      `INSERT INTO books (user_id, title, author, link, page_number, comment, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-      [userId, title, description, emoji, goal, target_date, frequency]
+      [userId, title, author, link, page_number, comment, status || 'reading']
     );
     return NextResponse.json(result.rows[0]);
   } catch (error) {
@@ -58,50 +56,21 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// PATCH — обновить привычку (включая уведомления)
 export async function PATCH(request: NextRequest) {
   const userId = await getUserId();
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { id, streak, longest_streak, reminder_enabled, reminder_time } = await request.json();
+  const { id, title, author, link, page_number, comment, status } = await request.json();
 
   try {
-    let queryText = 'UPDATE habits SET ';
-    const params: any[] = [];
-    let paramIndex = 1;
-
-    if (streak !== undefined) {
-      queryText += `streak = $${paramIndex}, `;
-      params.push(streak);
-      paramIndex++;
-    }
-
-    if (longest_streak !== undefined) {
-      queryText += `longest_streak = $${paramIndex}, `;
-      params.push(longest_streak);
-      paramIndex++;
-    }
-
-    if (reminder_enabled !== undefined) {
-      queryText += `reminder_enabled = $${paramIndex}, `;
-      params.push(reminder_enabled);
-      paramIndex++;
-    }
-
-    if (reminder_time !== undefined) {
-      queryText += `reminder_time = $${paramIndex}, `;
-      params.push(reminder_time);
-      paramIndex++;
-    }
-
-    // Убираем последнюю запятую и пробел
-    queryText = queryText.slice(0, -2);
-    queryText += ` WHERE id = $${paramIndex} AND user_id = $${paramIndex + 1} RETURNING *`;
-    params.push(id, userId);
-
-    const result = await query(queryText, params);
+    const result = await query(
+      `UPDATE books 
+       SET title = $1, author = $2, link = $3, page_number = $4, comment = $5, status = $6, updated_at = NOW()
+       WHERE id = $7 AND user_id = $8 RETURNING *`,
+      [title, author, link, page_number, comment, status, id, userId]
+    );
     return NextResponse.json(result.rows[0]);
   } catch (error) {
     console.error('DB Error:', error);
@@ -109,7 +78,6 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// DELETE — удалить привычку
 export async function DELETE(request: NextRequest) {
   const userId = await getUserId();
   if (!userId) {
@@ -120,7 +88,7 @@ export async function DELETE(request: NextRequest) {
   const id = url.searchParams.get('id');
 
   try {
-    await query('DELETE FROM habits WHERE id = $1 AND user_id = $2', [id, userId]);
+    await query('DELETE FROM books WHERE id = $1 AND user_id = $2', [id, userId]);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('DB Error:', error);

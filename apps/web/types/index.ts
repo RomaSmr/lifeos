@@ -59,6 +59,8 @@ export interface Habit {
   streak: number;
   longest_streak: number;
   created_at: string;
+  reminder_enabled?: boolean;  // 🔥 ДОБАВЛЯЕМ
+  reminder_time?: string;      // 🔥 ДОБАВЛЯЕМ
 }
 
 export interface HabitLog {
