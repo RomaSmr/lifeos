@@ -4,7 +4,7 @@ import { query } from '@/lib/db/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs'; // ✅ ДОБАВЛЯЕМ ИМПОРТ
+import bcrypt from 'bcryptjs';
 
 const ADMINS = ['romagronki@gmail.com', 'admin@lifeos.app'];
 
@@ -23,13 +23,13 @@ async function isAdmin() {
 // GET - получить пользователя
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> } // ✅ ИСПРАВЛЕНО
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await isAdmin())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { id } = await params; // ✅ ИСПРАВЛЕНО
+  const { id } = await params;
 
   try {
     const result = await query(
@@ -51,13 +51,13 @@ export async function GET(
 // PUT - обновить пользователя
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> } // ✅ ИСПРАВЛЕНО
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await isAdmin())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { id } = await params; // ✅ ИСПРАВЛЕНО
+  const { id } = await params;
   const body = await request.json();
   const { name, email, role, is_blocked } = body;
 
@@ -82,13 +82,13 @@ export async function PUT(
 // DELETE - удалить пользователя
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> } // ✅ ИСПРАВЛЕНО
+  { params }: { params: Promise<{ id: string }> }
 ) {
   if (!(await isAdmin())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { id } = await params; // ✅ ИСПРАВЛЕНО
+  const { id } = await params;
 
   try {
     // Удаляем всё связанное (каскадное удаление)
@@ -103,13 +103,13 @@ export async function DELETE(
 // POST - сброс пароля
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> } // ✅ ИСПРАВЛЕНО
+  { params }: { params: Promise<{ id: string }> } // ✅ ИСПРАВЛЕНО: убрал лишнее :string
 ) {
   if (!(await isAdmin())) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const { id } = await params; // ✅ ИСПРАВЛЕНО
+  const { id } = await params; // ✅ ТЕПЕРЬ РАБОТАЕТ
   const body = await request.json();
   const { newPassword } = body;
 
